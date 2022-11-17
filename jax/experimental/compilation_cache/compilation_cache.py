@@ -126,8 +126,12 @@ def _hash_computation(hash_obj, xla_computation):
   else:
     serialized_hlo = xla_computation.as_serialized_hlo_module_proto()
   scrubbed_hlo = re.sub(b" at 0x[a-f0-9]+>", b" at 0x...>", serialized_hlo)
-  print(scrubbed_hlo)
-  scrubbed_hlo = re.sub(b"/.*\.py", b"", scrubbed_hlo)
+  # FAX specific changes
+  # We additionally scrub function definition path as it contains values that 
+  # changes every run (ex: datetime, user name, venv path)
+  scrubbed_hlo = re.sub(b"tmp/ray/session_.*fax", b"", scrubbed_hlo) # Contains datetime
+  scrubbed_hlo = re.sub(b"/home/.*fax", b"", scrubbed_hlo) # Contains username
+  scrubbed_hlo = re.sub(b"/virtualenvs/.*lib", b"", scrubbed_hlo) # Contains venv info 
   hash_obj.update(scrubbed_hlo)
 
 def _hash_compile_options(hash_obj, compile_options_obj):
